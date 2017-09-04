@@ -83,7 +83,6 @@ NSString *const FXFormFieldTypeOption = @"option";
 NSString *const FXFormFieldTypeDate = @"date";
 NSString *const FXFormFieldTypeTime = @"time";
 NSString *const FXFormFieldTypeDateTime = @"datetime";
-NSString *const FXFormFieldTypeImage = @"image";
 
 
 static NSString *const FXFormsException = @"FXFormsException";
@@ -137,32 +136,32 @@ static UIView *FXFormsFirstResponder(UIView *view)
 
 static inline CGFloat FXFormLabelMinFontSize(UILabel *label)
 {
-    
+
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_6_0
-    
+
     if (![label respondsToSelector:@selector(setMinimumScaleFactor:)])
     {
         return label.minimumFontSize;
     }
-    
+
 #endif
-    
+
     return label.font.pointSize * label.minimumScaleFactor;
 }
 
 static inline void FXFormLabelSetMinFontSize(UILabel *label, CGFloat fontSize)
 {
-    
+
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_6_0
-    
+
     if (![label respondsToSelector:@selector(setMinimumScaleFactor:)])
     {
         label.minimumFontSize = fontSize;
     }
     else
-        
+
 #endif
-        
+
     {
         label.minimumScaleFactor = fontSize / label.font.pointSize;
     }
@@ -192,7 +191,7 @@ static inline NSArray *FXFormProperties(id<FXForm> form)
             free(propertyList);
             NSObjectProperties = [NSObjectProperties copy];
         });
-        
+
         properties = [NSMutableArray array];
         Class subclass = [form class];
         while (subclass != [NSObject class])
@@ -205,7 +204,7 @@ static inline NSArray *FXFormProperties(id<FXForm> form)
                 objc_property_t property = propertyList[i];
                 const char *propertyName = property_getName(property);
                 NSString *key = @(propertyName);
-                
+
                 //ignore NSObject properties, unless overridden as readwrite
                 char *readonly = property_copyAttributeValue(property, "R");
                 if (readonly)
@@ -288,7 +287,7 @@ static inline NSArray *FXFormProperties(id<FXForm> form)
                     }
                 }
                 free(typeEncoding);
- 
+
                 //add to properties
                 NSMutableDictionary *inferred = [NSMutableDictionary dictionaryWithObject:key forKey:FXFormFieldKey];
                 if (valueClass) inferred[FXFormFieldClass] = valueClass;
@@ -331,31 +330,31 @@ static BOOL FXFormCanGetValueForKey(id<FXForm> form, NSString *key)
     {
         return NO;
     }
-    
+
     //does a property exist for it?
     if ([[FXFormProperties(form) valueForKey:FXFormFieldKey] containsObject:key])
     {
         return YES;
     }
-    
+
     //is there a getter method for this key?
     if ([form respondsToSelector:NSSelectorFromString(key)])
     {
         return YES;
     }
-    
+
     //does it override valueForKey?
     if (FXFormOverridesSelector(form, @selector(valueForKey:)))
     {
         return YES;
     }
-    
+
     //does it override valueForUndefinedKey?
     if (FXFormOverridesSelector(form, @selector(valueForUndefinedKey:)))
     {
         return YES;
     }
-    
+
     //it will probably crash
     return NO;
 }
@@ -367,31 +366,31 @@ static BOOL FXFormCanSetValueForKey(id<FXForm> form, NSString *key)
     {
         return NO;
     }
-    
+
     //does a property exist for it?
     if ([[FXFormProperties(form) valueForKey:FXFormFieldKey] containsObject:key])
     {
         return YES;
     }
-    
+
     //is there a setter method for this key?
     if ([form respondsToSelector:NSSelectorFromString([NSString stringWithFormat:@"set%@%@:", [[key substringToIndex:1] uppercaseString], [key substringFromIndex:1]])])
     {
         return YES;
     }
-    
+
     //does it override setValueForKey?
     if (FXFormOverridesSelector(form, @selector(setValue:forKey:)))
     {
         return YES;
     }
-    
+
     //does it override setValue:forUndefinedKey?
     if (FXFormOverridesSelector(form, @selector(setValue:forUndefinedKey:)))
     {
         return YES;
     }
-    
+
     //it will probably crash
     return NO;
 }
@@ -412,17 +411,13 @@ static NSString *FXFormFieldInferType(NSDictionary *dictionary)
     {
         return FXFormFieldTypeDate;
     }
-    else if ([valueClass isSubclassOfClass:[UIImage class]])
-    {
-        return FXFormFieldTypeImage;
-    }
-    
+
     if (!valueClass && ! dictionary[FXFormFieldAction] && !dictionary[FXFormFieldSegue])
     {
         //assume string if there's no action and nothing else to go on
         valueClass = [NSString class];
     }
-    
+
     //guess type from key name
     if ([valueClass isSubclassOfClass:[NSString class]])
     {
@@ -450,7 +445,7 @@ static NSString *FXFormFieldInferType(NSDictionary *dictionary)
             return FXFormFieldTypeText;
         }
     }
-    
+
     return FXFormFieldTypeDefault;
 }
 
@@ -463,7 +458,7 @@ static Class FXFormFieldInferClass(NSDictionary *dictionary)
         //use same type as options
         return [[options firstObject] classForCoder];
     }
-    
+
     //attempt to determine class from type
     NSString *type = dictionary[FXFormFieldType] ?: FXFormFieldInferType(dictionary);
     return @{FXFormFieldTypeLabel: [NSString class],
@@ -482,8 +477,7 @@ static Class FXFormFieldInferClass(NSDictionary *dictionary)
              FXFormFieldTypeOption: [NSNumber class],
              FXFormFieldTypeDate: [NSDate class],
              FXFormFieldTypeTime: [NSDate class],
-             FXFormFieldTypeDateTime: [NSDate class],
-             FXFormFieldTypeImage: [UIImage class]
+             FXFormFieldTypeDateTime: [NSDate class]
              }[type];
 }
 
@@ -499,7 +493,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         //TODO: is there a better way to force non-inline cells to use base cell?
         dictionary[FXFormFieldType] = type = FXFormFieldTypeDefault;
     }
-    
+
     //get field value class
     id valueClass = dictionary[FXFormFieldClass];
     if ([valueClass isKindOfClass:[NSString class]])
@@ -510,7 +504,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         dictionary[FXFormFieldClass] = valueClass;
     }
-  
+
     //get default value
     id defaultValue = dictionary[FXFormFieldDefaultValue];
     if (defaultValue)
@@ -532,28 +526,28 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         }
         dictionary[FXFormFieldDefaultValue] = defaultValue;
     }
-  
+
     //get field type
     NSString *key = dictionary[FXFormFieldKey];
     if (!type)
     {
         dictionary[FXFormFieldType] = type = FXFormFieldInferType(dictionary);
     }
-    
+
     //convert cell from string to class
     id cellClass = dictionary[FXFormFieldCell];
     if ([cellClass isKindOfClass:[NSString class]])
     {
         dictionary[FXFormFieldCell] = cellClass = FXFormClassFromString(cellClass);
     }
-    
+
     //convert view controller from string to class
     id viewController = dictionary[FXFormFieldViewController];
     if ([viewController isKindOfClass:[NSString class]])
     {
         dictionary[FXFormFieldViewController] = viewController = FXFormClassFromString(viewController);
     }
-    
+
     //convert header from string to class
     id header = dictionary[FXFormFieldHeader];
     if ([header isKindOfClass:[NSString class]])
@@ -591,7 +585,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         dictionary[FXFormFieldFooter] = @"";
     }
-    
+
     //preprocess template dictionary
     NSDictionary *template = dictionary[FXFormFieldTemplate];
     if (template)
@@ -600,7 +594,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         FXFormPreprocessFieldDictionary((NSMutableDictionary *)template);
         dictionary[FXFormFieldTemplate] = template;
     }
-    
+
     //derive title from key or selector name
     if (!dictionary[FXFormFieldTitle])
     {
@@ -700,17 +694,17 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         //use default fields
         fields = [NSMutableArray arrayWithArray:[properties valueForKey:FXFormFieldKey]];
     }
-    
+
     //add extra fields
     [fields addObjectsFromArray:[form extraFields] ?: @[]];
-    
+
     //process fields
     NSMutableDictionary *fieldDictionariesByKey = [NSMutableDictionary dictionary];
     for (NSDictionary *dict in properties)
     {
         fieldDictionariesByKey[dict[FXFormFieldKey]] = dict;
     }
-    
+
     for (NSInteger i = [fields count] - 1; i >= 0; i--)
     {
         NSMutableDictionary *dictionary = nil;
@@ -736,7 +730,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             {
                 [dictionary addEntriesFromDictionary:[(NSObject *)form valueForKey:selector]];
             }
-            
+
             FXFormPreprocessFieldDictionary(dictionary);
         }
         else
@@ -745,7 +739,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         }
         fields[i] = [[self alloc] initWithForm:form controller:formController attributes:dictionary];
     }
-    
+
     return fields;
 }
 
@@ -816,7 +810,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         return [self.valueTransformer(value) fieldDescription];
     }
-    
+
     if ([value isKindOfClass:[NSDate class]])
     {
         NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
@@ -835,10 +829,10 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             formatter.dateStyle = NSDateFormatterShortStyle;
             formatter.timeStyle = NSDateFormatterShortStyle;
         }
-        
+
         return [formatter stringFromDate:value];
     }
-    
+
     return [value fieldDescription];
 }
 
@@ -849,7 +843,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         return [(id)self.form valueForKey:descriptionKey];
     }
-    
+
     if (self.options)
     {
         if ([self isIndexedType])
@@ -863,7 +857,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                 return [self.placeholder fieldDescription];
             }
         }
-      
+
         if ([self isCollectionType])
         {
             id value = self.value;
@@ -882,7 +876,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                         if ([description length]) [options addObject:description];
                     }
                 }];
-                
+
                 value = [options count]? options: nil;
             }
             else if (value && self.valueTransformer)
@@ -893,7 +887,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                 }
                 value = [options count]? options: nil;
             }
-          
+
             return [value fieldDescription] ?: [self.placeholder fieldDescription];
         }
         else if ([self.type isEqual:FXFormFieldTypeBitfield])
@@ -912,7 +906,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                     if ([description length]) [options addObject:description];
                 }
             }];
-            
+
             return [options count]? [options fieldDescription]: [self.placeholder fieldDescription];
         }
         else if (self.placeholder && ![self.options containsObject:self.value])
@@ -920,7 +914,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             return [self.placeholder description];
         }
     }
-    
+
     return [self valueDescription:self.value];
 }
 
@@ -988,7 +982,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         //use default value if available
         value = value ?: self.defaultValue;
-        
+
         if (self.reverseValueTransformer && ![self isCollectionType] && !self.options)
         {
             value = self.reverseValueTransformer(value);
@@ -1016,7 +1010,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             //handle case where value is numeric but value class is string
             value = [value description];
         }
-      
+
         if (self.valueClass == [NSMutableString class])
         {
             //replace string or make mutable copy of it
@@ -1031,7 +1025,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                 value = [NSMutableString stringWithString:value];
             }
         }
-      
+
         if (!value)
         {
             for (NSDictionary *field in FXFormProperties(self.form))
@@ -1048,7 +1042,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                 }
             }
         }
-        
+
         [(NSObject *)self.form setValue:value forKey:self.key];
     }
 }
@@ -1078,7 +1072,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             };
         }
     }
-    
+
     _valueTransformer = [valueTransformer copy];
 }
 
@@ -1093,7 +1087,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             [weakSelf.formController performAction:selector withSender:sender];
         };
     }
-    
+
     _action = [action copy];
 }
 
@@ -1103,9 +1097,9 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         segue = FXFormClassFromString(segue) ?: [segue copy];
     }
-    
+
     NSAssert(segue != [UIStoryboardPopoverSegue class], @"Unfortunately displaying subcontrollers using UIStoryboardPopoverSegue is not supported, as doing so would require calling private methods. To display using a popover, create a custom UIStoryboard subclass instead.");
-    
+
     _segue = segue;
 }
 
@@ -1221,14 +1215,14 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         index = (index == 0)? NSNotFound: index - 1;
     }
-    
+
     if ([self isCollectionType])
     {
         BOOL copyNeeded = ([NSStringFromClass(self.valueClass) rangeOfString:@"Mutable"].location == NSNotFound);
-        
+
         id collection = self.value ?: [[self.valueClass alloc] init];
         if (copyNeeded) collection = [collection mutableCopy];
-        
+
         if (index == NSNotFound)
         {
             collection = nil;
@@ -1260,7 +1254,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             //need to preserve order for ordered collections
             [collection removeAllObjects];
             [self.options enumerateObjectsUsingBlock:^(id option, NSUInteger i, __unused BOOL *stop) {
-                
+
                 if (i == index)
                 {
                     if (selected) [collection addObject:option];
@@ -1271,7 +1265,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                 }
             }];
         }
-        
+
         if (copyNeeded) collection = [collection copy];
         self.value = collection;
     }
@@ -1501,37 +1495,37 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         field[FXFormFieldKey] = [@(i) description];
         [_fields addObject:field];
     }
-    
+
     //create add button
     NSString *addButtonTitle = self.field.fieldTemplate[FXFormFieldTitle] ?: NSLocalizedString(@"Add Item", nil);
     [_fields addObject:@{FXFormFieldTitle: addButtonTitle,
                          FXFormFieldCell: [FXFormDefaultCell class],
                          @"textLabel.textAlignment": @(NSTextAlignmentLeft),
                          FXFormFieldAction: ^(UITableViewCell<FXFormFieldCell> *cell) {
-        
+
         FXFormField *field = cell.field;
         FXFormController *formController = field.formController;
         UITableView *tableView = formController.tableView;
-        
+
         [tableView beginUpdates];
-        
+
         NSIndexPath *indexPath = [tableView indexPathForCell:cell];
         FXFormSection *section = formController.sections[indexPath.section];
         [section addNewField];
 
         [tableView deselectRowAtIndexPath:indexPath animated:YES];
         [tableView insertRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
-        
+
         [tableView endUpdates];
-        
+
         dispatch_async(dispatch_get_main_queue(), ^{
-            
+
             [formController tableView:tableView didSelectRowAtIndexPath:indexPath];
             [tableView selectRowAtIndexPath:indexPath animated:NO scrollPosition:UITableViewScrollPositionNone];
         });
-        
+
     }}];
-    
+
     //converts values to an ordered array
     if ([self.field.valueClass isSubclassOfClass:[NSIndexSet class]])
     {
@@ -1556,7 +1550,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     BOOL copyNeeded = ([NSStringFromClass(self.field.valueClass) rangeOfString:@"Mutable"].location == NSNotFound);
     id collection = [[self.field.valueClass alloc] init];
     if (copyNeeded) collection = [collection mutableCopy];
-    
+
     //convert values back to original type
     if ([self.field.valueClass isSubclassOfClass:[NSIndexSet class]])
     {
@@ -1575,7 +1569,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         [collection addObjectsFromArray:self.values];
     }
-    
+
     //set field value
     if (copyNeeded) collection = [collection copy];
     self.field.value = collection;
@@ -1638,7 +1632,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 
     id value = self.values[index1];
     [self.values removeObjectAtIndex:index1];
-    
+
     if (index2 >= [self.fields count])
     {
         [self.fields addObject:field];
@@ -1649,12 +1643,12 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         [self.fields insertObject:field atIndex:index2];
         [self.values insertObject:value atIndex:index2];
     }
-    
+
     for (NSUInteger i = MIN(index1, index2); i < [self.values count]; i++)
     {
         self.fields[i][FXFormFieldKey] = [@(i) description];
     }
-    
+
     [self updateFormValue];
 }
 
@@ -1697,12 +1691,12 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             }
             subform = field.value;
         }
-        
+
         if (subform)
         {
             NSArray *subsections = [FXFormSection sectionsWithForm:subform controller:formController];
             [sections addObjectsFromArray:subsections];
-            
+
             section = [subsections firstObject];
             if (!section.header) section.header = field.header ?: field.title;
             section.isSortable = field.isSortable;
@@ -1844,17 +1838,16 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                                        FXFormFieldTypeBoolean: [FXFormSwitchCell class],
                                        FXFormFieldTypeDate: [FXFormDatePickerCell class],
                                        FXFormFieldTypeTime: [FXFormDatePickerCell class],
-                                       FXFormFieldTypeDateTime: [FXFormDatePickerCell class],
-                                       FXFormFieldTypeImage: [FXFormImagePickerCell class]} mutableCopy];
+                                       FXFormFieldTypeDateTime: [FXFormDatePickerCell class]} mutableCopy];
         _cellClassesForFieldClasses = [NSMutableDictionary dictionary];
         _controllerClassesForFieldTypes = [@{FXFormFieldTypeDefault: [FXFormViewController class]} mutableCopy];
         _controllerClassesForFieldClasses = [NSMutableDictionary dictionary];
-        
+
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardDidShow:)
                                                      name:UIKeyboardDidShowNotification
                                                    object:nil];
-        
+
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardWillHide:)
                                                      name:UIKeyboardWillHideNotification
@@ -1867,7 +1860,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 {
     _tableView.dataSource = nil;
     _tableView.delegate = nil;
-    
+
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -1960,7 +1953,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)setDelegate:(id<FXFormControllerDelegate>)delegate
 {
     _delegate = delegate;
-    
+
     //force table to update respondsToSelector: cache
     self.tableView.delegate = nil;
     self.tableView.delegate = self;
@@ -2067,19 +2060,19 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         if ([responder respondsToSelector:selector])
         {
-            
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-            
+
             [responder performSelector:selector withObject:sender];
-            
+
 #pragma clang diagnostic pop
-            
+
             return;
         }
         responder = [responder nextResponder];
     }
-    
+
     //trye parent controller
     if (self.parentFormController)
     {
@@ -2176,11 +2169,11 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     if (editingStyle == UITableViewCellEditingStyleDelete)
     {
         [tableView beginUpdates];
-        
+
         FXFormSection *section = [self sectionAtIndex:indexPath.section];
         [section removeFieldAtIndex:indexPath.row];
         [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
-        
+
         [tableView endUpdates];
     }
 }
@@ -2226,7 +2219,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         return [self.delegate tableView:tableView viewForHeaderInSection:index];
     }
-    
+
     //handle view or class
     id header = [self sectionAtIndex:index].header;
     if ([header isKindOfClass:[UIView class]])
@@ -2243,7 +2236,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         return [self.delegate tableView:tableView heightForHeaderInSection:index];
     }
-    
+
     //handle view or class
     UIView *header = [self sectionAtIndex:index].header;
     if ([header isKindOfClass:[UIView class]])
@@ -2260,7 +2253,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         return [self.delegate tableView:tableView viewForFooterInSection:index];
     }
-    
+
     //handle view or class
     id footer = [self sectionAtIndex:index].footer;
     if ([footer isKindOfClass:[UIView class]])
@@ -2277,7 +2270,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         return [self.delegate tableView:tableView heightForFooterInSection:index];
     }
-    
+
     //handle view or class
     UIView *footer = [self sectionAtIndex:index].footer;
     if ([footer isKindOfClass:[UIView class]])
@@ -2295,15 +2288,15 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     [field.cellConfig enumerateKeysAndObjectsUsingBlock:^(NSString *keyPath, id value, __unused BOOL *stop) {
         [cell setValue:value forKeyPath:keyPath];
     }];
-    
+
     //set form field
     ((id<FXFormFieldCell>)cell).field = field;
-    
+
     //configure cell after setting field as well (not ideal, but allows overriding keyboard attributes, etc)
     [field.cellConfig enumerateKeysAndObjectsUsingBlock:^(NSString *keyPath, id value, __unused BOOL *stop) {
         [cell setValue:value forKeyPath:keyPath];
     }];
-    
+
     //forward to delegate
     if ([self.delegate respondsToSelector:_cmd])
     {
@@ -2319,7 +2312,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         [cell didSelectWithTableView:tableView controller:[self tableViewController]];
     }
-    
+
     //forward to delegate
     if ([self.delegate respondsToSelector:@selector(tableView:didSelectRowAtIndexPath:)])
     {
@@ -2350,7 +2343,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 {
     //dismiss keyboard
     [FXFormsFirstResponder(self.tableView) resignFirstResponder];
-    
+
     //forward to delegate
     if ([self.delegate respondsToSelector:_cmd])
     {
@@ -2381,40 +2374,40 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         keyboardFrame = [self.tableView.window convertRect:keyboardFrame toView:self.tableView.superview];
         CGFloat heightOfTableViewThatIsCoveredByKeyboard = self.tableView.frame.origin.y + self.tableView.frame.size.height - keyboardFrame.origin.y;
         CGFloat heightOfTableViewThatIsNotCoveredByKeyboard = self.tableView.frame.size.height - heightOfTableViewThatIsCoveredByKeyboard;
-        
+
         UIEdgeInsets tableContentInset = self.tableView.contentInset;
         self.originalTableContentInset = tableContentInset;
         tableContentInset.bottom = heightOfTableViewThatIsCoveredByKeyboard;
-        
+
         UIEdgeInsets tableScrollIndicatorInsets = self.tableView.scrollIndicatorInsets;
         tableScrollIndicatorInsets.bottom += heightOfTableViewThatIsCoveredByKeyboard;
-        
+
         [UIView beginAnimations:nil context:nil];
-        
+
         // adjust the tableview insets by however much the keyboard is overlapping the tableview
         self.tableView.contentInset = tableContentInset;
         self.tableView.scrollIndicatorInsets = tableScrollIndicatorInsets;
-        
+
         UIView *firstResponder = FXFormsFirstResponder(self.tableView);
         if ([firstResponder isKindOfClass:[UITextView class]])
         {
             UITextView *textView = (UITextView *)firstResponder;
-            
+
             // calculate the position of the cursor in the textView
             NSRange range = textView.selectedRange;
             UITextPosition *beginning = textView.beginningOfDocument;
             UITextPosition *start = [textView positionFromPosition:beginning offset:range.location];
             UITextPosition *end = [textView positionFromPosition:start offset:range.length];
             CGRect caretFrame = [textView caretRectForPosition:end];
-            
+
             // convert the cursor to the same coordinate system as the tableview
             CGRect caretViewFrame = [textView convertRect:caretFrame toView:self.tableView.superview];
-            
+
             // padding makes sure that the cursor isn't sitting just above the
             // keyboard and will adjust to 3 lines of text worth above keyboard
             CGFloat padding = textView.font.lineHeight * 3;
             CGFloat keyboardToCursorDifference = (caretViewFrame.origin.y + caretViewFrame.size.height) - heightOfTableViewThatIsNotCoveredByKeyboard + padding;
-            
+
             // if there is a difference then we want to adjust the keyboard, otherwise
             // the cursor is fine to stay where it is and the keyboard doesn't need to move
             if (keyboardToCursorDifference > 0)
@@ -2425,7 +2418,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
                 [self.tableView setContentOffset:contentOffset animated:YES];
             }
         }
-        
+
         [UIView commitAnimations];
     }
 }
@@ -2438,7 +2431,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         NSDictionary *keyboardInfo = [note userInfo];
         UIEdgeInsets tableScrollIndicatorInsets = self.tableView.scrollIndicatorInsets;
         tableScrollIndicatorInsets.bottom = 0;
-        
+
         //restore insets
         [UIView beginAnimations:nil context:nil];
         [UIView setAnimationCurve:(UIViewAnimationCurve)keyboardInfo[UIKeyboardAnimationCurveUserInfoKey]];
@@ -2472,7 +2465,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)setField:(FXFormField *)field
 {
     _field = field;
-    
+
     id<FXForm> form = nil;
     if (field.options)
     {
@@ -2495,7 +2488,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         [NSException raise:FXFormsException format:@"FXFormViewController field value must conform to FXForm protocol"];
     }
-    
+
     self.formController.parentFormController = field.formController;
     self.formController.form = form;
 }
@@ -2513,7 +2506,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
+
     if (!self.tableView)
     {
         self.tableView = [[UITableView alloc] initWithFrame:[UIScreen mainScreen].applicationFrame
@@ -2546,7 +2539,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
-    
+
     NSIndexPath *selected = [self.tableView indexPathForSelectedRow];
     if (selected)
     {
@@ -2575,7 +2568,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         FXFormLabelSetMinFontSize(self.textLabel, FXFormFieldMinFontSize);
         self.detailTextLabel.font = [UIFont systemFontOfSize:17];
         FXFormLabelSetMinFontSize(self.detailTextLabel, FXFormFieldMinFontSize);
-        
+
         if ([[UIDevice currentDevice].systemVersion floatValue] >= 7.0)
         {
             self.selectionStyle = UITableViewCellSelectionStyleDefault;
@@ -2584,7 +2577,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         {
             self.selectionStyle = UITableViewCellSelectionStyleBlue;
         }
-        
+
         [self setUp];
     }
     return self;
@@ -2707,7 +2700,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.textLabel.accessibilityValue = self.textLabel.text;
     self.detailTextLabel.text = [self.field fieldDescription];
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
-    
+
     if ([self.field.type isEqualToString:FXFormFieldTypeLabel])
     {
         self.accessoryType = UITableViewCellAccessoryNone;
@@ -2839,7 +2832,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 {
     self.selectionStyle = UITableViewCellSelectionStyleNone;
     self.textLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
-    
+
     self.textField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 200, 21)];
     self.textField.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin |UIViewAutoresizingFlexibleLeftMargin;
     self.textField.font = [UIFont systemFontOfSize:self.textLabel.font.pointSize];
@@ -2847,9 +2840,9 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.textField.textColor = [UIColor colorWithRed:0.275f green:0.376f blue:0.522f alpha:1.000f];
     self.textField.delegate = self;
     [self.contentView addSubview:self.textField];
-    
+
     [self.contentView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self.textField action:NSSelectorFromString(@"becomeFirstResponder")]];
-    
+
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(textDidChange) name:UITextFieldTextDidChangeNotification object:self.textField];
 }
 
@@ -2883,7 +2876,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
             //oh god, the hack, it burns
             self.returnKeyOverridden = YES;
         }
-        
+
         block(self.textField, [value integerValue]);
     }
     else
@@ -2895,11 +2888,11 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     CGRect labelFrame = self.textLabel.frame;
     labelFrame.size.width = MIN(MAX([self.textLabel sizeThatFits:CGSizeZero].width, FXFormFieldMinLabelWidth), FXFormFieldMaxLabelWidth);
     self.textLabel.frame = labelFrame;
-    
+
     CGRect textFieldFrame = self.textField.frame;
     textFieldFrame.origin.x = self.textLabel.frame.origin.x + MAX(FXFormFieldMinLabelWidth, self.textLabel.frame.size.width) + FXFormFieldLabelSpacing;
     textFieldFrame.origin.y = (self.contentView.bounds.size.height - textFieldFrame.size.height) / 2;
@@ -2923,11 +2916,11 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.textLabel.accessibilityValue = self.textLabel.text;
     self.textField.placeholder = [self.field.placeholder fieldDescription];
     self.textField.text = [self.field fieldDescription];
-    
+
     self.textField.returnKeyType = UIReturnKeyDone;
     self.textField.textAlignment = [self.field.title length]? NSTextAlignmentRight: NSTextAlignmentLeft;
     self.textField.secureTextEntry = NO;
-    
+
     if ([self.field.type isEqualToString:FXFormFieldTypeText])
     {
         self.textField.autocorrectionType = UITextAutocorrectionTypeDefault;
@@ -2987,7 +2980,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         {
             returnKeyType = UIReturnKeyNext;
         }
-        
+
         self.textField.returnKeyType = returnKeyType;
     }
     return YES;
@@ -3063,10 +3056,10 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         textView = [[UITextView alloc] init];
         textView.font = [UIFont systemFontOfSize:17];
     });
-    
+
     textView.text = [field fieldDescription] ?: @" ";
     CGSize textViewSize = [textView sizeThatFits:CGSizeMake(width - FXFormFieldPaddingLeft - FXFormFieldPaddingRight, FLT_MAX)];
-    
+
     CGFloat height = [field.title length]? 21: 0; // label height
     height += FXFormFieldPaddingTop + ceilf(textViewSize.height) + FXFormFieldPaddingBottom;
     return height;
@@ -3076,7 +3069,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 {
     self.selectionStyle = UITableViewCellSelectionStyleNone;
     self.textLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
-    
+
     self.textView = [[UITextView alloc] initWithFrame:CGRectMake(0, 0, 320, 21)];
     self.textView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleRightMargin;
     self.textView.font = [UIFont systemFontOfSize:17];
@@ -3085,10 +3078,10 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.textView.delegate = self;
     self.textView.scrollEnabled = NO;
     [self.contentView addSubview:self.textView];
-    
+
     self.detailTextLabel.textAlignment = NSTextAlignmentLeft;
     self.detailTextLabel.numberOfLines = 0;
-    
+
     [self.contentView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self.textView action:NSSelectorFromString(@"becomeFirstResponder")]];
 }
 
@@ -3100,12 +3093,12 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     CGRect labelFrame = self.textLabel.frame;
     labelFrame.origin.y = FXFormFieldPaddingTop;
     labelFrame.size.width = MIN(MAX([self.textLabel sizeThatFits:CGSizeZero].width, FXFormFieldMinLabelWidth), FXFormFieldMaxLabelWidth);
     self.textLabel.frame = labelFrame;
-    
+
     CGRect textViewFrame = self.textView.frame;
     textViewFrame.origin.x = FXFormFieldPaddingLeft;
     textViewFrame.origin.y = self.textLabel.frame.origin.y + self.textLabel.frame.size.height;
@@ -3117,11 +3110,11 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         textViewFrame.origin.y = self.textLabel.frame.origin.y;
     }
     self.textView.frame = textViewFrame;
-    
+
     textViewFrame.origin.x += 5;
     textViewFrame.size.width -= 5;
     self.detailTextLabel.frame = textViewFrame;
-    
+
     CGRect contentViewFrame = self.contentView.frame;
     contentViewFrame.size.height = self.textView.frame.origin.y + self.textView.frame.size.height + FXFormFieldPaddingBottom;
     self.contentView.frame = contentViewFrame;
@@ -3135,11 +3128,11 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.detailTextLabel.text = self.field.placeholder;
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
     self.detailTextLabel.hidden = ([self.textView.text length] > 0);
-    
+
     self.textView.returnKeyType = UIReturnKeyDefault;
     self.textView.textAlignment = NSTextAlignmentLeft;
     self.textView.secureTextEntry = NO;
-    
+
     if ([self.field.type isEqualToString:FXFormFieldTypeText])
     {
         self.textView.autocorrectionType = UITextAutocorrectionTypeDefault;
@@ -3193,15 +3186,15 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)textViewDidChange:(UITextView *)textView
 {
     [self updateFieldValue];
-    
+
     //show/hide placeholder
     self.detailTextLabel.hidden = ([textView.text length] > 0);
-    
+
     //resize the tableview if required
     UITableView *tableView = [self tableView];
     [tableView beginUpdates];
     [tableView endUpdates];
-    
+
     //scroll to show cursor
     CGRect cursorRect = [self.textView caretRectForPosition:self.textView.selectedTextRange.end];
     [tableView scrollRectToVisible:[tableView convertRect:cursorRect fromView:self.textView] animated:YES];
@@ -3210,7 +3203,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)textViewDidEndEditing:(__unused UITextView *)textView
 {
     [self updateFieldValue];
-    
+
     if (self.field.action) self.field.action(self);
 }
 
@@ -3261,7 +3254,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)valueChanged
 {
     self.field.value = @(self.switchControl.on);
-    
+
     if (self.field.action) self.field.action(self);
 }
 
@@ -3280,7 +3273,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         wrapper.frame = CGRectMake(0, 0, wrapper.frame.size.width + FXFormFieldPaddingRight, wrapper.frame.size.height);
     }
-    
+
     self.selectionStyle = UITableViewCellSelectionStyleNone;
     self.accessoryView = wrapper;
     [self.stepper addTarget:self action:@selector(valueChanged) forControlEvents:UIControlEventValueChanged];
@@ -3306,7 +3299,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.detailTextLabel.text = [self.field fieldDescription];
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
     [self setNeedsLayout];
-    
+
     if (self.field.action) self.field.action(self);
 }
 
@@ -3327,14 +3320,14 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.slider = [[UISlider alloc] init];
     [self.slider addTarget:self action:@selector(valueChanged) forControlEvents:UIControlEventValueChanged];
     [self.contentView addSubview:self.slider];
-    
+
     self.selectionStyle = UITableViewCellSelectionStyleNone;
 }
 
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     CGRect sliderFrame = self.slider.frame;
     sliderFrame.origin.x = self.textLabel.frame.origin.x + self.textLabel.frame.size.width + FXFormFieldPaddingLeft;
     sliderFrame.origin.y = (self.contentView.frame.size.height - sliderFrame.size.height) / 2;
@@ -3352,7 +3345,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 - (void)valueChanged
 {
     self.field.value = @(self.slider.value);
-    
+
     if (self.field.action) self.field.action(self);
 }
 
@@ -3380,7 +3373,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.textLabel.accessibilityValue = self.textLabel.text;
     self.detailTextLabel.text = [self.field fieldDescription] ?: [self.field.placeholder fieldDescription];
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
-    
+
     if ([self.field.type isEqualToString:FXFormFieldTypeDate])
     {
         self.datePicker.datePickerMode = UIDatePickerModeDate;
@@ -3393,7 +3386,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         self.datePicker.datePickerMode = UIDatePickerModeDateAndTime;
     }
-    
+
     self.datePicker.date = self.field.value ?: ([self.field.placeholder isKindOfClass:[NSDate class]]? self.field.placeholder: [NSDate date]);
 }
 
@@ -3413,7 +3406,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.detailTextLabel.text = [self.field fieldDescription];
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
     [self setNeedsLayout];
-    
+
     if (self.field.action) self.field.action(self);
 }
 
@@ -3428,165 +3421,6 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
         [self resignFirstResponder];
     }
     [tableView deselectRowAtIndexPath:tableView.indexPathForSelectedRow animated:YES];
-}
-
-@end
-
-
-@interface FXFormImagePickerCell () <UINavigationControllerDelegate, UIImagePickerControllerDelegate, UIActionSheetDelegate>
-
-@property (nonatomic, strong) UIImagePickerController *imagePickerController;
-@property (nonatomic, weak) UIViewController *controller;
-
-@end
-
-
-@implementation FXFormImagePickerCell
-
-- (void)setUp
-{
-    self.selectionStyle = UITableViewCellSelectionStyleNone;
-    
-    UIImageView *imageView = [[UIImageView alloc] init];
-    imageView.contentMode = UIViewContentModeScaleAspectFill;
-    imageView.clipsToBounds = YES;
-    self.accessoryView = imageView;
-    [self setNeedsLayout];
-}
-
-- (void)dealloc
-{
-    _imagePickerController.delegate = nil;
-}
-
-- (void)layoutSubviews
-{
-    CGRect frame = self.imagePickerView.bounds;
-    frame.size.height = self.bounds.size.height - 10;
-    UIImage *image = self.imagePickerView.image;
-    frame.size.width = image.size.height? image.size.width * (frame.size.height / image.size.height): 0;
-    self.imagePickerView.bounds = frame;
-    
-    [super layoutSubviews];
-}
-
-- (void)update
-{
-    self.textLabel.text = self.field.title;
-    self.textLabel.accessibilityValue = self.textLabel.text;
-    self.imagePickerView.image = [self imageValue];
-    [self setNeedsLayout];
-}
-
-- (UIImage *)imageValue
-{
-    if (self.field.value)
-    {
-        return self.field.value;
-    }
-    else if (self.field.placeholder)
-    {
-        UIImage *placeholderImage = self.field.placeholder;
-        if ([placeholderImage isKindOfClass:[NSString class]])
-        {
-            placeholderImage = [UIImage imageNamed:self.field.placeholder];
-        }
-        return placeholderImage;
-    }
-    return nil;
-}
-
-- (UIImagePickerController *)imagePickerController
-{
-    if (!_imagePickerController)
-    {
-        _imagePickerController = [[UIImagePickerController alloc] init];
-        _imagePickerController.delegate = self;
-        _imagePickerController.allowsEditing = YES;
-    }
-    return _imagePickerController;
-}
-
-- (UIImageView *)imagePickerView
-{
-    return (UIImageView *)self.accessoryView;
-}
-
-- (void)didSelectWithTableView:(UITableView *)tableView controller:(UIViewController *)controller
-{
-    [FXFormsFirstResponder(tableView) resignFirstResponder];
-    [tableView deselectRowAtIndexPath:tableView.indexPathForSelectedRow animated:YES];
-    
-    if (!TARGET_IPHONE_SIMULATOR && ![UIImagePickerController isSourceTypeAvailable:UIImagePickerControllerSourceTypeCamera])
-    {
-        self.imagePickerController.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-        [controller presentViewController:self.imagePickerController animated:YES completion:nil];
-    }
-    else if ([UIAlertController class])
-    {
-        UIAlertControllerStyle style = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)? UIAlertControllerStyleAlert: UIAlertControllerStyleActionSheet;
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil message:nil preferredStyle:style];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Take Photo", nil) style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-            [self actionSheet:nil didDismissWithButtonIndex:0];
-        }]];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Photo Library", nil) style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-            [self actionSheet:nil didDismissWithButtonIndex:1];
-        }]];
-        
-        [alert addAction:[UIAlertAction actionWithTitle:NSLocalizedString(@"Cancel", nil) style:UIAlertActionStyleCancel handler:NULL]];
-        
-        self.controller = controller;
-        [controller presentViewController:alert animated:YES completion:NULL];
-    }
-    else
-    {
-        self.controller = controller;
-        [[[UIActionSheet alloc] initWithTitle:nil delegate:self cancelButtonTitle:NSLocalizedString(@"Cancel", nil) destructiveButtonTitle:nil otherButtonTitles:NSLocalizedString(@"Take Photo", nil), NSLocalizedString(@"Photo Library", nil), nil] showInView:controller.view];
-    }
-}
-
-- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker
-{
-    [picker dismissViewControllerAnimated:YES completion:NULL];
-}
-
-- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info
-{
-    self.field.value = info[UIImagePickerControllerEditedImage] ?: info[UIImagePickerControllerOriginalImage];
-    [picker dismissViewControllerAnimated:YES completion:NULL];
-    if (self.field.action) self.field.action(self);
-    [self update];
-}
-
-- (void)actionSheet:(__unused UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex
-{
-    UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-    switch (buttonIndex)
-    {
-        case 0:
-        {
-            sourceType = UIImagePickerControllerSourceTypeCamera;
-            break;
-        }
-        case 1:
-        {
-            sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
-            break;
-        }
-        default:
-        {
-            self.controller = nil;
-            return;
-        }
-    }
-    if ([UIImagePickerController isSourceTypeAvailable:sourceType])
-    {
-        self.imagePickerController.sourceType = sourceType;
-        [self.controller presentViewController:self.imagePickerController animated:YES completion:nil];
-    }
-    self.controller = nil;
 }
 
 @end
@@ -3620,7 +3454,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.textLabel.accessibilityValue = self.textLabel.text;
     self.detailTextLabel.text = [self.field fieldDescription];
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
-    
+
     NSUInteger index = self.field.value? [self.field.options indexOfObject:self.field.value]: NSNotFound;
     if (self.field.placeholder)
     {
@@ -3675,9 +3509,9 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     [self.field setOptionSelected:YES atIndex:row];
     self.detailTextLabel.text = [self.field fieldDescription] ?: [self.field.placeholder fieldDescription];
     self.detailTextLabel.accessibilityValue = self.detailTextLabel.text;
-    
+
     [self setNeedsLayout];
-    
+
     if (self.field.action) self.field.action(self);
 }
 
@@ -3698,14 +3532,14 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     self.segmentedControl = [[UISegmentedControl alloc] initWithItems:@[]];
     [self.segmentedControl addTarget:self action:@selector(valueChanged) forControlEvents:UIControlEventValueChanged];
     [self.contentView addSubview:self.segmentedControl];
-    
+
     self.selectionStyle = UITableViewCellSelectionStyleNone;
 }
 
 - (void)layoutSubviews
 {
     [super layoutSubviews];
-    
+
     CGRect segmentedControlFrame = self.segmentedControl.frame;
     segmentedControlFrame.origin.x = self.textLabel.frame.origin.x + self.textLabel.frame.size.width + FXFormFieldPaddingLeft;
     segmentedControlFrame.origin.y = (self.contentView.frame.size.height - segmentedControlFrame.size.height) / 2;
@@ -3717,7 +3551,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
 {
     self.textLabel.text = self.field.title;
     self.textLabel.accessibilityValue = self.textLabel.text;
-    
+
     [self.segmentedControl removeAllSegments];
     for (NSUInteger i = 0; i < [self.field optionCount]; i++)
     {
@@ -3738,7 +3572,7 @@ static void FXFormPreprocessFieldDictionary(NSMutableDictionary *dictionary)
     {
         [self.field setOptionSelected:(selectedIndex == i) atIndex:i];
     }
-    
+
     if (self.field.action) self.field.action(self);
 }
 
